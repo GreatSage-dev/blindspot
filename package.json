@@ -1,0 +1,24 @@
+{
+  "name": "blindspot-qloo",
+  "version": "1.0.0",
+  "description": "BLINDSPOT: Catch the quiet taste clashes driving your crowd away—and fix your launch plan with Qloo's Taste AI.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test test/blindspot.test.js"
+  },
+  "keywords": [
+    "qloo",
+    "taste-ai",
+    "agentic-hackathon",
+    "cultural-intelligence",
+    "autonomous-agents"
+  ],
+  "author": "GreatSage-dev",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
