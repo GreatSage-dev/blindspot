@@ -8,7 +8,7 @@ import {
   testAdversarialCliche,
   evaluatePickAgainstCrowd,
 } from '../src/engine/blindspot.js';
-import { createBlindspotServer } from '../local-server.js';
+import { createBlindspotServer } from '../scripts/local-server.js';
 
 test('Qloo Parameter Validator accepts valid hackathon endpoints and filter.types', () => {
   const checkInsights = validateQlooRequest('/v2/insights', {

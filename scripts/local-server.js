@@ -3,14 +3,15 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { QlooClient, QlooAuthError } from './src/qloo/client.js';
-import { validateQlooRequest } from './src/qloo/validator.js';
-import { PRESET_CASES, ADVERSARIAL_CLICHES } from './src/data/presets.js';
-import { runBlindspotAudit, testAdversarialCliche } from './src/engine/blindspot.js';
+import { QlooClient, QlooAuthError } from '../src/qloo/client.js';
+import { validateQlooRequest } from '../src/qloo/validator.js';
+import { PRESET_CASES, ADVERSARIAL_CLICHES } from '../src/data/presets.js';
+import { runBlindspotAudit, testAdversarialCliche } from '../src/engine/blindspot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const ROOT_DIR = path.join(__dirname, '..');
+const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 
 export const qlooClient = new QlooClient();
 
