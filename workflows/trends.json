@@ -1,0 +1,8 @@
+{
+  "entity_type": "urn:entity:music:artist",
+  "entities": [
+    "urn:entity:artist:floating-points"
+  ],
+  "start_date": "2026-05-01",
+  "end_date": "2026-10-01"
+}

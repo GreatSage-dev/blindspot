@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "qloo": {
+      "command": "qloo",
+      "args": ["mcp"]
+    },
+    "qloo-docs": {
+      "url": "https://docs.qloo.com/mcp"
+    }
+  }
+}

@@ -3,7 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { QlooClient } from './src/qloo/client.js';
+import { QlooClient, QlooAuthError } from './src/qloo/client.js';
 import { validateQlooRequest } from './src/qloo/validator.js';
 import { PRESET_CASES, ADVERSARIAL_CLICHES } from './src/data/presets.js';
 import { runBlindspotAudit, testAdversarialCliche } from './src/engine/blindspot.js';
@@ -31,7 +31,7 @@ function sendJson(res, status, payload) {
     'Cache-Control': 'no-store',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Qloo-Api-Key',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Qloo-Api-Key, X-Api-Key',
   });
   res.end(body);
 }
@@ -62,7 +62,7 @@ export async function handleRequest(req, res) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Qloo-Api-Key',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Qloo-Api-Key, X-Api-Key',
     });
     return res.end();
   }
@@ -100,7 +100,10 @@ export async function handleRequest(req, res) {
           ? await readJsonBody(req)
           : Object.fromEntries(parsedUrl.searchParams.entries());
       const apiKeyOverride =
-        req.headers['x-qloo-api-key'] || body.apiKey || undefined;
+        req.headers['x-qloo-api-key'] ||
+        req.headers['x-api-key'] ||
+        body.apiKey ||
+        undefined;
 
       const audit = await runBlindspotAudit(qlooClient, {
         caseId: body.caseId,
@@ -116,6 +119,19 @@ export async function handleRequest(req, res) {
         qlooStats: qlooClient.getSummary(),
       });
     } catch (err) {
+      if (err instanceof QlooAuthError || err.name === 'QlooAuthError' || err.code === 'QLOO_AUTH') {
+        return sendJson(res, 401, {
+          ok: false,
+          status: 'error',
+          error: {
+            code: err.code || 'QLOO_AUTH',
+            layer: 'qloo',
+            retryable: false,
+            message: err.message,
+            recovery: err.recovery || "Set QLOO_API_KEY or run 'qloo setup --qloo'.",
+          },
+        });
+      }
       return sendJson(res, 400, {
         ok: false,
         error: err.message || 'Audit execution failed',

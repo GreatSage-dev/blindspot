@@ -1,0 +1,9 @@
+{
+  "group_a": [
+    "urn:entity:place:the-standard-high-line"
+  ],
+  "group_b": [
+    "urn:entity:artist:floating-points"
+  ],
+  "limit": 10
+}

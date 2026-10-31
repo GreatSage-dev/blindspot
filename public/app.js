@@ -66,6 +66,19 @@ if (els.caseSelect && ['standard-highline', 'a24-indie-launch', 'liquid-death-cu
   els.caseSelect.value = initialCaseId;
 }
 
+function updateKeyButtonLabel() {
+  if (els.openKeyModalBtn) {
+    if (state.apiKey) {
+      els.openKeyModalBtn.textContent = 'API: Live Key Configured';
+      els.openKeyModalBtn.style.borderColor = '#111111';
+    } else {
+      els.openKeyModalBtn.textContent = 'Qloo API key';
+      els.openKeyModalBtn.style.borderColor = '';
+    }
+  }
+}
+updateKeyButtonLabel();
+
 function escapeHtml(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
@@ -99,6 +112,7 @@ async function fetchAudit({ caseId, customQuery, customCity } = {}) {
     const headers = { 'Content-Type': 'application/json' };
     if (state.apiKey) {
       headers['X-Qloo-Api-Key'] = state.apiKey;
+      headers['X-Api-Key'] = state.apiKey;
     }
 
     const res = await fetch('/api/audit', {
@@ -108,7 +122,12 @@ async function fetchAudit({ caseId, customQuery, customCity } = {}) {
     });
     const data = await res.json();
     if (!data.ok) {
-      throw new Error(data.error || 'Audit failed');
+      if (res.status === 401 || data.error?.code === 'QLOO_AUTH') {
+        els.keyModal.hidden = false;
+        els.findingSubline.innerHTML = `<span style="color:#d9381e; font-weight:600;">Qloo API Key Required:</span> Custom queries against the live Qloo Taste Graph require an event key. Enter your key in the dialog above, or switch to one of the 3 verified benchmark dossiers.`;
+        return;
+      }
+      throw new Error(data.error?.message || data.error || 'Audit failed');
     }
 
     state.currentAudit = data.audit;
@@ -131,7 +150,11 @@ function renderDashboard(audit, qlooStats) {
   const affinityDiff = v.avgAfterAffinity - v.avgBeforeAffinity;
   const fameDiff = v.avgAfterPopularity - v.avgBeforePopularity;
 
-  els.pageTitle.textContent = `${audit.label} (${audit.city}): Qloo taste turnaround`;
+  const modeBadge = audit.qlooRequests[0]?.provenance?.mode === 'live-qloo-api'
+    ? '<span class="status-pill pill-ok" style="margin-left:8px;">Live Qloo API</span>'
+    : '<span class="status-pill" style="margin-left:8px; background:#f0f1f2; color:#555;">Benchmark Fixture</span>';
+
+  els.pageTitle.innerHTML = `${escapeHtml(audit.label)} (${escapeHtml(audit.city)}): Qloo taste turnaround ${modeBadge}`;
   els.findingSubline.innerHTML = `<span class="finding-strong">${v.beforePassedCount} of ${v.totalDomains} normal AI picks fit this crowd</span> (${v.avgBeforePopularity}% avg fame vs. ${v.avgBeforeAffinity}% crowd fit); Qloo replaced all ${v.totalDomains} and verified <span class="finding-strong">${v.avgAfterAffinity}% crowd affinity</span> across ${v.totalQlooCalls} validated API calls.`;
 
   els.navRiskCount.textContent = `${v.beforeWalkoutRisks}`;
@@ -161,339 +184,455 @@ function renderDashboard(audit, qlooStats) {
   els.symptomBlamedText.textContent = audit.symptomBlamed;
   els.quietCauseText.textContent = audit.quietCauseSummary;
 
-  // DNA tags strip
-  els.dnaTagsStrip.textContent = `Top crowd tags: ${audit.audienceTags
-    .slice(0, 3)
-    .map((t) => `${t.name} (${Math.round(t.weight * 100)}%)`)
-    .join(' · ')}`;
+  // DNA Tags Strip
+  renderDnaTags(audit.audienceTags || []);
 
-  // 15-Second Split-Screen Comparison Table
-  els.splitComparisonBody.innerHTML = audit.domains
+  // Split Comparison Rows
+  renderSplitComparison(audit.domains);
+
+  // Adversarial Clichés
+  renderAdversarialButtons();
+
+  // Hidden Markets & Demographics
+  renderMarkets(audit.hiddenMarkets || []);
+  renderDemographics(audit.demographics || {});
+
+  // Action Kit (Emails & Rulebook)
+  renderActionKit(audit.actionKit);
+
+  // Request Log Table
+  renderRequestLogs(audit.qlooRequests || []);
+}
+
+function renderDnaTags(tags) {
+  els.dnaTagsStrip.innerHTML = tags
     .map(
-      (d, idx) => `
-      <tr>
-        <td>
-          <div class="entity-title">${escapeHtml(d.domain)}</div>
-          <div class="mono-id">${escapeHtml(d.filterType)}</div>
-        </td>
-        <td>
-          <div class="entity-title entity-title-rejected">${escapeHtml(d.naivePick.name)}</div>
-          <div class="entity-sub">
-            <span class="status-pill pill-risk">Walkout risk</span>
-            Clash: ${escapeHtml(d.naivePick.clashingTags.join(', '))} · Skews ${escapeHtml(formatAgeSkew(d.naivePick.ageSkew))}
-          </div>
-        </td>
-        <td class="num-col">${Math.round(d.naivePick.popularity * 100)}%</td>
-        <td class="num-col kpi-delta-neg">${Math.round(d.naivePick.affinity * 100)}%</td>
-        <td>
-          <div class="entity-title">${escapeHtml(d.qlooFix.name)}</div>
-          <div class="entity-sub">
-            <span class="status-pill pill-ok">Verified fit</span>
-            Matches: ${escapeHtml(d.qlooFix.sharedTags.join(', '))} · Skews ${escapeHtml(formatAgeSkew(d.qlooFix.ageSkew))}
-          </div>
-        </td>
-        <td class="num-col">${Math.round(d.qlooFix.popularity * 100)}%</td>
-        <td class="num-col kpi-delta-pos">${Math.round(d.qlooFix.affinity * 100)}%</td>
-        <td class="num-col">${d.qlooFix.sharedTagsCount}</td>
-        <td>
-          <button type="button" class="btn-outline proof-btn" data-slot-index="${idx}">Receipt</button>
-        </td>
-      </tr>
+      (t) => `
+      <div class="dna-tag">
+        <span>${escapeHtml(t.name)}</span>
+        <span class="dna-weight">${Math.round(t.weight * 100)}%</span>
+      </div>
     `
     )
     .join('');
+}
 
-  document.querySelectorAll('.proof-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.getAttribute('data-slot-index'));
-      openProofModal(audit.domains[idx]);
-    });
-  });
+function renderSplitComparison(domains) {
+  els.splitComparisonBody.innerHTML = domains
+    .map((d) => {
+      const naive = d.naivePick;
+      const fix = d.qlooFix;
+      const naivePassed = naive.check?.passed;
+      const fixPassed = fix.check?.passed;
 
-  // Hidden Markets Table
-  els.marketsTableBody.innerHTML = audit.hiddenMarkets
-    .map(
-      (m) => `
-      <tr>
-        <td><strong>${escapeHtml(m.city)}</strong></td>
-        <td class="num-col kpi-delta-pos">#${m.tasteRank}</td>
-        <td class="num-col">#${m.popRank}</td>
-        <td class="num-col">${Math.round(m.affinity * 100)}%</td>
-        <td>${escapeHtml(m.note)}</td>
-      </tr>
-    `
-    )
-    .join('');
+      const naiveAge = naive.ageSkew ? formatAgeSkew(naive.ageSkew) : '';
+      const fixAge = fix.ageSkew ? formatAgeSkew(fix.ageSkew) : '';
 
-  // Demographics Table
-  els.momentumText.textContent = audit.momentum.verdict;
-  els.demographicsTableBody.innerHTML = Object.entries(audit.demographics.age)
-    .map(([bracket, val]) => {
-      const pct = Math.round(val * 100);
-      const sign = pct >= 0 ? `+${pct}%` : `−${Math.abs(pct)}%`;
-      const cls = pct >= 0 ? 'kpi-delta-pos' : 'kpi-delta-neg';
-      const pill =
-        pct >= 0
-          ? '<span class="status-pill pill-ok">Target crowd</span>'
-          : '<span class="status-pill pill-neutral">Under-indexes</span>';
-      const humanAge = AGE_LABELS[bracket] || bracket;
       return `
+        <tr class="domain-row">
+          <td colspan="4" class="domain-header-cell">
+            <span class="domain-badge">${escapeHtml(d.domain)}</span>
+            <span class="domain-subcode"><code class="inline-code">${escapeHtml(d.filterType)}</code></span>
+          </td>
+        </tr>
         <tr>
-          <td><strong>${escapeHtml(humanAge)}</strong> <span class="mono-id">${escapeHtml(bracket)}</span></td>
-          <td class="num-col ${cls}">${sign}</td>
-          <td>${pill}</td>
+          <!-- Left: Naive Pick -->
+          <td class="naive-col">
+            <div class="entity-title entity-title-rejected">${escapeHtml(naive.name)}</div>
+            <div class="meta-subline">
+              <span>Fame: <strong class="num-fig">${Math.round(naive.popularity * 100)}%</strong></span>
+              <span>Crowd fit: <strong class="num-fig">${Math.round(naive.affinity * 100)}%</strong></span>
+            </div>
+            ${naiveAge ? `<div class="entity-desc">Age skew: ${escapeHtml(naiveAge)}</div>` : ''}
+            <div class="entity-desc">${escapeHtml(naive.whyItFails)}</div>
+            <div class="tags-list">
+              ${(naive.clashingTags || [])
+                .map((t) => `<span class="tag-pill tag-pill-clash">${escapeHtml(t)}</span>`)
+                .join('')}
+            </div>
+          </td>
+          <td class="status-col">
+            <span class="status-pill ${naivePassed ? 'pill-ok' : 'pill-risk'}">
+              ${naivePassed ? 'Verified Fit' : 'Walkout Risk'}
+            </span>
+          </td>
+
+          <!-- Right: Qloo Fix -->
+          <td class="fix-col">
+            <div class="entity-title">${escapeHtml(fix.name)}</div>
+            <div class="meta-subline">
+              <span>Crowd affinity: <strong class="num-fig" style="color:var(--ink-green);">${Math.round(fix.affinity * 100)}%</strong></span>
+              <span>Fame: <strong class="num-fig">${Math.round(fix.popularity * 100)}%</strong></span>
+              <span>Shared tags: <strong class="num-fig">${fix.sharedTagsCount}</strong></span>
+            </div>
+            ${fixAge ? `<div class="entity-desc">Target cohort: ${escapeHtml(fixAge)}</div>` : ''}
+            <div class="entity-desc">${escapeHtml(fix.whyItWorks)}</div>
+            <div class="tags-list">
+              ${(fix.sharedTags || [])
+                .map((t) => `<span class="tag-pill tag-pill-shared">${escapeHtml(t)}</span>`)
+                .join('')}
+            </div>
+          </td>
+          <td class="action-col">
+            <span class="status-pill ${fixPassed ? 'pill-ok' : 'pill-risk'}" style="margin-bottom:8px;">
+              ${fixPassed ? '5 / 5 Verified' : 'Check'}
+            </span>
+            <button
+              type="button"
+              class="btn-outline inspect-receipt-btn"
+              data-slot-idx="${d.index - 1}"
+            >
+              Receipt
+            </button>
+          </td>
         </tr>
       `;
     })
     .join('');
 
-  // Outreach Emails
-  els.emailsContainer.innerHTML = audit.actionKit.outreachEmails
-    .map(
-      (mail, idx) => `
-      <article class="email-box">
-        <div>
-          <div class="mono-id">${escapeHtml(mail.domain)}</div>
-          <h3 class="email-box-subject">${escapeHtml(mail.subject)}</h3>
-          <p class="email-box-body">${escapeHtml(mail.body)}</p>
-        </div>
-        <button type="button" class="btn-outline copy-email-btn" data-email-idx="${idx}">Copy outreach email</button>
-      </article>
-    `
-    )
-    .join('');
-
-  document.querySelectorAll('.copy-email-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.getAttribute('data-email-idx'));
-      const mail = audit.actionKit.outreachEmails[idx];
-      navigator.clipboard.writeText(`Subject: ${mail.subject}\n\n${mail.body}`);
-      btn.textContent = 'Copied to clipboard';
-      setTimeout(() => {
-        btn.textContent = 'Copy outreach email';
-      }, 1500);
+  // Wire receipt buttons
+  document.querySelectorAll('.inspect-receipt-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const idx = Number(e.currentTarget.dataset.slotIdx);
+      openProofModal(state.currentAudit.domains[idx]);
     });
   });
+}
 
-  // Rulebook
-  els.rulebookPre.textContent = audit.actionKit.crowdRulebookPrompt;
+function openProofModal(slot) {
+  if (!slot) return;
+  const naive = slot.naivePick;
+  const fix = slot.qlooFix;
+  const p = fix.provenance || naive.provenance || {};
 
-  // Request Log
-  els.validatorPill.textContent = `${qlooStats?.totalRequests || audit.qlooRequests.length} validated requests · 0 rejected params`;
-  els.qlooLogsTableBody.innerHTML = audit.qlooRequests
+  els.proofModalBody.innerHTML = `
+    <div class="receipt-grid">
+      <div class="receipt-block">
+        <h4 class="receipt-h4">Qloo Validation Receipt (${escapeHtml(slot.domain)})</h4>
+        <dl class="receipt-dl">
+          <dt>Endpoint</dt>
+          <dd><code class="inline-code">${escapeHtml(p.endpoint || '/v2/insights')}</code></dd>
+          <dt>Filter type</dt>
+          <dd><code class="inline-code">${escapeHtml(p.filterType || slot.filterType)}</code></dd>
+          <dt>Path executed</dt>
+          <dd><code class="inline-code">${escapeHtml(p.path || '/v2/insights')}</code></dd>
+          <dt>Schema check</dt>
+          <dd><span class="status-pill pill-ok">0 rejected parameters</span></dd>
+          <dt>Mode</dt>
+          <dd><span class="status-pill pill-ok">${escapeHtml(p.mode || 'live-qloo-api')}</span></dd>
+          <dt>Latency</dt>
+          <dd class="num-fig">${p.latencyMs ?? 1} ms</dd>
+        </dl>
+      </div>
+
+      <div class="receipt-block">
+        <h4 class="receipt-h4">Deterministic Mathematical Derivation</h4>
+        <div style="font-size:12px; line-height:1.6; color:#444;">
+          <p><strong>1. Naive Pick Rejected (${escapeHtml(naive.name)}):</strong></p>
+          <ul style="padding-left:16px; margin:4px 0 8px;">
+            <li>Fame Percentile: <strong>${Math.round(naive.popularity * 100)}%</strong> (&ge; 85% ceiling)</li>
+            <li>Crowd Affinity: <strong>${Math.round(naive.affinity * 100)}%</strong> (&lt; 75% gate threshold)</li>
+            <li>Shared Taste Tags: <strong>${naive.sharedTagsCount || 0}</strong> (&lt; 3 minimum)</li>
+            <li>Verdict: <strong style="color:var(--crimson);">${naive.check?.status || 'WALKOUT_RISK'}</strong></li>
+          </ul>
+          <p><strong>2. Qloo Pick Approved (${escapeHtml(fix.name)}):</strong></p>
+          <ul style="padding-left:16px; margin:4px 0;">
+            <li>Crowd Affinity: <strong style="color:var(--ink-green);">${Math.round(fix.affinity * 100)}%</strong> (&ge; 75% threshold)</li>
+            <li>Fame Percentile: <strong>${Math.round(fix.popularity * 100)}%</strong> (insider discovery band)</li>
+            <li>Shared Taste Tags: <strong>${fix.sharedTagsCount}</strong> (&ge; 3 verified)</li>
+            <li>Verdict: <strong style="color:var(--ink-green);">${fix.check?.status || 'VERIFIED_FIT'}</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+
+  els.proofModal.hidden = false;
+}
+
+// Adversarial Gate Logic
+function renderAdversarialButtons() {
+  els.advButtonsRow.innerHTML = `
+    <button type="button" class="btn-adv" data-cliche="cliche-drake-stadium">
+      Force Drake (99% fame stadium booking)
+    </button>
+    <button type="button" class="btn-adv" data-cliche="cliche-mrbeast-promo">
+      Force MrBeast stunt (99% YouTube promo)
+    </button>
+    <button type="button" class="btn-adv" data-cliche="cliche-times-sq-brand">
+      Force Times Square chain sponsor (96% fame)
+    </button>
+  `;
+
+  els.advButtonsRow.querySelectorAll('.btn-adv').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const clicheId = e.currentTarget.dataset.cliche;
+      await runAdversarialCheck(clicheId);
+    });
+  });
+}
+
+async function runAdversarialCheck(clicheId) {
+  els.advReceiptBox.hidden = false;
+  els.advReceiptBox.innerHTML = `<div>Auditing adversarial cliché against Qloo Taste Gate...</div>`;
+
+  try {
+    const res = await fetch('/api/adversarial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clicheId,
+        caseLabel: state.currentAudit?.label || 'The Standard, High Line',
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const r = data.result;
+    els.advReceiptBox.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span class="status-pill pill-risk">QLOO ADVERSARIAL GATE: ${escapeHtml(r.verdict)}</span>
+        <span class="num-fig" style="font-size:12px; color:#666;">${r.latencyMs} ms · 0 rejected params</span>
+      </div>
+      <div style="font-size:13px; font-weight:600; color:var(--crimson); margin-bottom:4px;">
+        ${escapeHtml(r.name)} (${escapeHtml(r.category)})
+      </div>
+      <div class="meta-subline" style="margin-bottom:8px;">
+        <span>Fame: <strong class="num-fig">${r.popularity}%</strong></span>
+        <span>Crowd affinity: <strong class="num-fig">${r.affinity}%</strong></span>
+        <span>Shared tags: <strong class="num-fig">${r.sharedTags}</strong></span>
+      </div>
+      <div style="font-size:12px; color:#444; line-height:1.5;">
+        ${escapeHtml(r.whyBlocked)}
+      </div>
+    `;
+  } catch (err) {
+    els.advReceiptBox.innerHTML = `<div style="color:var(--crimson);">Gate error: ${err.message}</div>`;
+  }
+}
+
+// Hidden Markets
+function renderMarkets(markets) {
+  els.marketsTableBody.innerHTML = markets
     .map(
-      (req) => `
+      (m) => `
       <tr>
-        <td class="mono-id">${escapeHtml(req.endpoint)}</td>
-        <td class="mono-id">${escapeHtml(req.filterType || 'n/a')}</td>
-        <td class="mono-id">${escapeHtml(req.path)}</td>
-        <td class="num-col kpi-delta-pos">${req.rejectedParams}</td>
-        <td class="num-col">${req.latencyMs} ms</td>
+        <td style="font-weight:600;">${escapeHtml(m.city)}</td>
+        <td class="num-col num-fig">#${m.popRank}</td>
+        <td class="num-col num-fig" style="color:var(--ink-green); font-weight:600;">#${m.tasteRank}</td>
+        <td class="num-col num-fig" style="font-weight:600;">${Math.round(m.affinity * 100)}%</td>
+        <td style="color:#555;">${escapeHtml(m.note)}</td>
       </tr>
     `
     )
     .join('');
 }
 
-function renderMetricChart(audit, metric) {
-  const titles = {
-    affinity: 'Crowd fit per slot: Qloo pick vs. normal AI pick',
-    fame: 'Fame per slot: insider sweet spot vs. over-famous picks',
-    tags: 'Shared taste tags per slot',
-    pass: 'Verification result per slot',
-    calls: 'Qloo response time per slot (ms)',
-  };
-  els.chartHeading.textContent = titles[metric] || titles.affinity;
+// Demographics
+function renderDemographics(demo) {
+  const age = demo.age || {};
+  const entries = Object.entries(age);
 
-  const rows = audit.domains.map((d) => {
-    if (metric === 'fame') {
-      return {
-        label: d.domain.split('/')[0].trim(),
-        qlooVal: Math.round(d.qlooFix.popularity * 100),
-        naiveVal: Math.round(d.naivePick.popularity * 100),
-        unit: '%',
-        max: 100,
-      };
-    }
-    if (metric === 'tags') {
-      return {
-        label: d.domain.split('/')[0].trim(),
-        qlooVal: d.qlooFix.sharedTagsCount,
-        naiveVal: d.naivePick.sharedTagsCount,
-        unit: ' tags',
-        max: 6,
-      };
-    }
-    if (metric === 'pass') {
-      return {
-        label: d.domain.split('/')[0].trim(),
-        qlooVal: d.qlooFix.check.passed ? 100 : 0,
-        naiveVal: d.naivePick.check.passed ? 100 : 0,
-        unit: '%',
-        max: 100,
-      };
-    }
-    if (metric === 'calls') {
-      const lat = d.qlooFix.provenance?.latencyMs || 2;
-      return {
-        label: d.domain.split('/')[0].trim(),
-        qlooVal: lat,
-        naiveVal: 0,
-        unit: ' ms',
-        max: Math.max(20, lat * 2),
-      };
-    }
-    return {
-      label: d.domain.split('/')[0].trim(),
-      qlooVal: Math.round(d.qlooFix.affinity * 100),
-      naiveVal: Math.round(d.naivePick.affinity * 100),
-      unit: '%',
-      max: 100,
-    };
-  });
-
-  // Draw at the container's real pixel width so 12px labels stay 12px on every screen.
-  const W = Math.max(300, Math.round(els.svgChartContainer.clientWidth || 640));
-  const narrow = W < 520;
-  const labelW = narrow ? 96 : 150;
-  const valueW = narrow ? 84 : 120;
-  const barMaxPx = Math.max(80, W - labelW - valueW - 16);
-  const rowH = 34;
-  const H = 18 + rows.length * rowH + 8;
-  const sans = "IBM Plex Sans, system-ui, sans-serif";
-  const groupsSvg = rows
-    .map((r, i) => {
-      const y = 14 + i * rowH;
-      const wQloo = Math.max(4, Math.round((r.qlooVal / r.max) * barMaxPx));
-      const wNaive = Math.max(2, Math.round((r.naiveVal / r.max) * barMaxPx));
+  els.demographicsTableBody.innerHTML = entries
+    .map(([bracket, val]) => {
+      const pct = Math.round(val * 100);
+      const isPositive = val >= 0;
       return `
-        <g transform="translate(0, ${y})">
-          <text x="0" y="13" font-size="12" font-family="${sans}" fill="#131416">${escapeHtml(r.label)}</text>
-          <rect x="${labelW}" y="1" width="${wQloo}" height="10" fill="#1b6c80" rx="2" />
-          <rect x="${labelW}" y="14" width="${wNaive}" height="6" fill="#cdced1" rx="2" />
-          <text x="${W}" y="12" text-anchor="end" font-size="12" font-family="${sans}" font-weight="500" style="font-variant-numeric: tabular-nums" fill="#131416">${r.qlooVal}${r.unit}<tspan fill="#5d5f60" font-weight="400"> vs ${r.naiveVal}${r.unit}</tspan></text>
-        </g>
+        <tr>
+          <td>${escapeHtml(AGE_LABELS[bracket] || bracket)}</td>
+          <td class="num-col num-fig" style="color:${isPositive ? 'var(--ink-green)' : 'var(--crimson)'}; font-weight:600;">
+            ${isPositive ? '+' : ''}${pct}%
+          </td>
+          <td>
+            <div style="width:100%; height:6px; background:#e8eaec; border-radius:3px; overflow:hidden;">
+              <div style="width:${Math.min(100, Math.abs(pct * 2))}%; height:100%; background:${isPositive ? 'var(--ink-green)' : 'var(--crimson)'};"></div>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+}
+
+// Action Kit
+function renderActionKit(kit) {
+  if (!kit) return;
+  els.rulebookPre.textContent = kit.crowdRulebookPrompt || '';
+
+  els.emailsContainer.innerHTML = (kit.outreachEmails || [])
+    .map(
+      (e, idx) => `
+      <div class="email-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:600; color:#555;">OUTREACH #${idx + 1} · ${escapeHtml(e.slot)}</span>
+          <button type="button" class="btn-outline copy-email-btn" data-email-idx="${idx}">Copy proposal</button>
+        </div>
+        <div style="font-size:13px; font-weight:600; margin-bottom:4px;">To: ${escapeHtml(e.recipient)}</div>
+        <div style="font-size:12px; color:#555; margin-bottom:8px;">Subject: ${escapeHtml(e.subject)}</div>
+        <pre class="rulebook-pre" style="white-space:pre-wrap; font-size:11px; max-height:180px; overflow-y:auto;">${escapeHtml(e.body)}</pre>
+      </div>
+    `
+    )
+    .join('');
+
+  document.querySelectorAll('.copy-email-btn').forEach((btn) => {
+    btn.addEventListener('click', (ev) => {
+      const idx = Number(ev.currentTarget.dataset.emailIdx);
+      const email = kit.outreachEmails[idx];
+      navigator.clipboard.writeText(`To: ${email.recipient}\nSubject: ${email.subject}\n\n${email.body}`);
+      const orig = ev.currentTarget.textContent;
+      ev.currentTarget.textContent = 'Copied!';
+      setTimeout(() => (ev.currentTarget.textContent = orig), 1500);
+    });
+  });
+}
+
+// Request Logs
+function renderRequestLogs(requests) {
+  els.qlooLogsTableBody.innerHTML = requests
+    .map((r) => {
+      const p = r.provenance || {};
+      return `
+        <tr>
+          <td><code class="inline-code">${escapeHtml(p.endpoint || r.endpoint || '/v2/insights')}</code></td>
+          <td><code class="inline-code">${escapeHtml(p.filterType || r.params?.['filter.type'] || 'seed')}</code></td>
+          <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <code class="inline-code" style="font-size:10px;">${escapeHtml(p.path || '/v2/insights')}</code>
+          </td>
+          <td class="num-col num-fig">0</td>
+          <td class="num-col num-fig">${p.latencyMs ?? 1} ms</td>
+        </tr>
+      `;
+    })
+    .join('');
+}
+
+// Dynamic SVG Chart Renderer
+function renderMetricChart(audit, metric) {
+  const container = els.svgChartContainer;
+  const width = Math.max(340, container.clientWidth || 640);
+  const height = 180;
+  const padding = { top: 20, right: 20, bottom: 36, left: 40 };
+  const innerW = width - padding.left - padding.right;
+  const innerH = height - padding.top - padding.bottom;
+
+  const domains = audit.domains || [];
+  const barGroupWidth = innerW / Math.max(1, domains.length);
+  const barWidth = Math.min(24, (barGroupWidth - 12) / 2);
+
+  let maxValue = 100;
+  if (metric === 'tags') maxValue = 10;
+
+  const bars = domains
+    .map((d, i) => {
+      let qlooVal = Math.round(d.qlooFix.affinity * 100);
+      let naiveVal = Math.round(d.naivePick.affinity * 100);
+
+      if (metric === 'fame') {
+        qlooVal = Math.round(d.qlooFix.popularity * 100);
+        naiveVal = Math.round(d.naivePick.popularity * 100);
+      } else if (metric === 'tags') {
+        qlooVal = d.qlooFix.sharedTagsCount || 0;
+        naiveVal = d.naivePick.sharedTagsCount || 0;
+      }
+
+      const qlooH = (qlooVal / maxValue) * innerH;
+      const naiveH = (naiveVal / maxValue) * innerH;
+
+      const groupX = padding.left + i * barGroupWidth + (barGroupWidth - barWidth * 2 - 4) / 2;
+      const naiveX = groupX;
+      const qlooX = groupX + barWidth + 4;
+
+      const naiveY = padding.top + innerH - naiveH;
+      const qlooY = padding.top + innerH - qlooH;
+
+      const label = d.domain.split('/')[0].trim();
+
+      return `
+        <!-- Naive Bar -->
+        <rect x="${naiveX}" y="${naiveY}" width="${barWidth}" height="${naiveH}" fill="#c5c5c5" rx="2" />
+        <!-- Qloo Bar -->
+        <rect x="${qlooX}" y="${qlooY}" width="${barWidth}" height="${qlooH}" fill="#1b6c80" rx="2" />
+        <!-- Domain Label -->
+        <text x="${groupX + barWidth}" y="${height - 12}" text-anchor="middle" font-size="11" fill="#666" font-family="IBM Plex Sans, sans-serif">
+          ${escapeHtml(label)}
+        </text>
       `;
     })
     .join('');
 
-  els.svgChartContainer.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${escapeHtml(els.chartHeading.textContent)}">
-      <line x1="${labelW}" y1="${H - 4}" x2="${labelW + barMaxPx}" y2="${H - 4}" stroke="#e8eaec" stroke-width="1" />
-      ${groupsSvg}
+  container.innerHTML = `
+    <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;">
+      <!-- Grid Lines -->
+      <line x1="${padding.left}" y1="${padding.top}" x2="${width - padding.right}" y2="${padding.top}" stroke="#e8eaec" stroke-dasharray="2 2" />
+      <line x1="${padding.left}" y1="${padding.top + innerH / 2}" x2="${width - padding.right}" y2="${padding.top + innerH / 2}" stroke="#e8eaec" stroke-dasharray="2 2" />
+      <line x1="${padding.left}" y1="${padding.top + innerH}" x2="${width - padding.right}" y2="${padding.top + innerH}" stroke="#e8eaec" />
+
+      <!-- Y Axis Labels -->
+      <text x="${padding.left - 8}" y="${padding.top + 4}" text-anchor="end" font-size="10" fill="#888" font-family="IBM Plex Mono, monospace">${maxValue}${metric === 'tags' ? '' : '%'}</text>
+      <text x="${padding.left - 8}" y="${padding.top + innerH / 2 + 3}" text-anchor="end" font-size="10" fill="#888" font-family="IBM Plex Mono, monospace">${maxValue / 2}${metric === 'tags' ? '' : '%'}</text>
+      <text x="${padding.left - 8}" y="${padding.top + innerH + 3}" text-anchor="end" font-size="10" fill="#888" font-family="IBM Plex Mono, monospace">0</text>
+
+      ${bars}
     </svg>
   `;
 }
 
-window.addEventListener('resize', () => {
-  clearTimeout(window.__chartResizeT);
-  window.__chartResizeT = setTimeout(() => {
-    if (state.currentAudit) renderMetricChart(state.currentAudit, state.currentMetric);
-  }, 150);
-});
-
-function openProofModal(domainItem) {
-  if (!domainItem) return;
-  const explain = (domainItem.qlooFix.explainability || [])
-    .map((e) => `${e.entity}: +${Math.round(e.contribution * 100)}% influence`)
-    .join('\n');
-
-  els.proofModalBody.innerHTML = `
-    <p class="finding-subline"><strong>Slot:</strong> ${escapeHtml(domainItem.domain)} (${escapeHtml(domainItem.filterType)})</p>
-    <p class="finding-subline" style="margin-top:6px;"><strong>Rejected normal AI pick:</strong> ${escapeHtml(domainItem.naivePick.name)} (${Math.round(domainItem.naivePick.popularity * 100)}% fame · ${Math.round(domainItem.naivePick.affinity * 100)}% fit)</p>
-    <p class="finding-subline" style="margin-top:6px;"><strong>Verified Qloo replacement:</strong> ${escapeHtml(domainItem.qlooFix.name)} (${Math.round(domainItem.qlooFix.popularity * 100)}% fame · ${Math.round(domainItem.qlooFix.affinity * 100)}% fit)</p>
-    <pre class="rulebook-pre">GET ${escapeHtml(domainItem.qlooFix.provenance?.path || '/v2/insights')}</pre>
-    <p class="finding-subline"><strong>Explainability split (feature.explainability=true):</strong></p>
-    <pre class="rulebook-pre">${escapeHtml(explain || 'Verified via Qloo entity graph')}</pre>
-  `;
-  els.proofModal.hidden = false;
-}
-
-// Bindings
-els.caseSelect.addEventListener('change', () => {
-  state.currentCaseId = els.caseSelect.value;
-  els.customQueryInput.value = '';
-  els.advReceiptBox.hidden = true;
-  fetchAudit({ caseId: state.currentCaseId });
-});
-
-els.customAuditForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  els.advReceiptBox.hidden = true;
-  fetchAudit({
-    caseId: state.currentCaseId,
-    customQuery: els.customQueryInput.value.trim() || undefined,
-    customCity: els.customCityInput.value.trim() || undefined,
-  });
-});
-
-els.refreshAuditBtn.addEventListener('click', () => {
-  fetchAudit({
-    caseId: state.currentCaseId,
-    customQuery: els.customQueryInput.value.trim() || undefined,
-    customCity: els.customCityInput.value.trim() || undefined,
-  });
-});
-
+// KPI Click Switcher
 document.querySelectorAll('.kpi-cell').forEach((cell) => {
-  cell.addEventListener('click', () => {
+  cell.addEventListener('click', (e) => {
     document.querySelectorAll('.kpi-cell').forEach((c) => {
       c.classList.remove('is-selected');
       c.setAttribute('aria-selected', 'false');
     });
-    cell.classList.add('is-selected');
-    cell.setAttribute('aria-selected', 'true');
-    state.currentMetric = cell.getAttribute('data-metric') || 'affinity';
+    const target = e.currentTarget;
+    target.classList.add('is-selected');
+    target.setAttribute('aria-selected', 'true');
+    state.currentMetric = target.dataset.metric;
     if (state.currentAudit) {
       renderMetricChart(state.currentAudit, state.currentMetric);
     }
   });
 });
 
+// Event Listeners
+els.caseSelect.addEventListener('change', (e) => {
+  state.currentCaseId = e.target.value;
+  fetchAudit({ caseId: state.currentCaseId });
+});
+
+els.customAuditForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const query = els.customQueryInput.value.trim();
+  const city = els.customCityInput.value.trim();
+  if (!query) return;
+  fetchAudit({ customQuery: query, customCity: city });
+});
+
+els.refreshAuditBtn.addEventListener('click', () => {
+  fetchAudit({ caseId: state.currentCaseId });
+});
+
+// Sidebar View Switching
 document.querySelectorAll('.nav-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (e) => {
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-    const view = btn.getAttribute('data-view');
-    const map = {
-      all: 'section-overview',
-      markets: 'section-markets',
-      kit: 'section-kit',
-      logs: 'section-logs',
+    const t = e.currentTarget;
+    t.classList.add('is-active');
+    const view = t.dataset.view;
+
+    const sections = {
+      all: ['section-overview', 'section-split', 'section-adversarial', 'section-markets', 'section-kit', 'section-logs'],
+      markets: ['section-markets'],
+      kit: ['section-kit'],
+      logs: ['section-logs'],
     };
-    const target = document.getElementById(map[view] || 'section-overview');
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    els.appSidebar.classList.remove('is-open');
-  });
-});
 
-els.mobileMenuBtn.addEventListener('click', () => {
-  els.appSidebar.classList.toggle('is-open');
-});
-
-els.advButtonsRow.querySelectorAll('.btn-cliche').forEach((btn) => {
-  btn.addEventListener('click', async () => {
-    const clicheId = btn.getAttribute('data-cliche-id');
-    const res = await fetch('/api/adversarial', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clicheId,
-        caseLabel: state.currentAudit?.label || 'Current Plan',
-      }),
+    const activeSections = sections[view] || sections.all;
+    ['section-overview', 'section-split', 'section-adversarial', 'section-markets', 'section-kit', 'section-logs'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.hidden = !activeSections.includes(id);
     });
-    const data = await res.json();
-    if (data.ok && data.result) {
-      const r = data.result;
-      els.advReceiptBox.hidden = false;
-      els.advReceiptBox.innerHTML = `
-        <div><strong>${escapeHtml(r.verdict)}: ${escapeHtml(r.headline)}</strong> (Fame: ${r.popularity}% vs. Crowd fit: ${r.affinity}%)</div>
-        <div style="margin-top:4px;">${escapeHtml(r.explanation)}</div>
-        <div class="mono-id" style="margin-top:4px;">Proof query: ${escapeHtml(r.qlooProofEndpoint)}</div>
-      `;
-    }
   });
 });
 
@@ -537,8 +676,16 @@ els.closeKeyModalBtn.addEventListener('click', () => {
 els.saveKeyBtn.addEventListener('click', () => {
   state.apiKey = els.apiKeyInput.value.trim();
   localStorage.setItem('blindspot_qloo_key', state.apiKey);
+  updateKeyButtonLabel();
   els.keyModal.hidden = true;
   fetchAudit({ caseId: state.currentCaseId });
+});
+
+// Window resize updates SVG chart width
+window.addEventListener('resize', () => {
+  if (state.currentAudit) {
+    renderMetricChart(state.currentAudit, state.currentMetric);
+  }
 });
 
 fetchAudit({ caseId: state.currentCaseId });

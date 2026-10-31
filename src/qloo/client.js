@@ -1,8 +1,26 @@
 // Qloo Taste AI Client with Strict Parameter Validation & Request Provenance
+// Follows Qloo Hackathon Kit standards: zero silent fallbacks, explicit QLOO_AUTH handling,
+// and benchmark fixture reproducibility.
+
 import { validateQlooRequest, QlooParamError } from './validator.js';
+import { getBenchmarkFixture } from '../data/benchmark-fixtures.js';
 
 const DEFAULT_BASE_URL =
   process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
+
+export class QlooAuthError extends Error {
+  constructor(
+    message = 'Qloo API key required for live queries',
+    recovery = "Set QLOO_API_KEY, pass via 'X-Qloo-Api-Key' header, or run 'qloo setup --qloo' using @qloo/qloo-harness."
+  ) {
+    super(message);
+    this.name = 'QlooAuthError';
+    this.code = 'QLOO_AUTH';
+    this.layer = 'qloo';
+    this.retryable = false;
+    this.recovery = recovery;
+  }
+}
 
 export class QlooClient {
   constructor({ apiKey = process.env.QLOO_API_KEY, baseUrl = DEFAULT_BASE_URL } = {}) {
@@ -14,6 +32,7 @@ export class QlooClient {
       validRequests: 0,
       rejectedRequests: 0,
       liveCalls: 0,
+      fixtureCalls: 0,
       cachedCalls: 0,
       endpointsTouched: new Set(),
       filterTypesTouched: new Set(),
@@ -56,6 +75,7 @@ export class QlooClient {
     const startedAt = Date.now();
     const activeKey = apiKeyOverride || this.apiKey;
 
+    // Cache hit
     if (this.cache.has(fullPath)) {
       this.stats.cachedCalls += 1;
       const cached = this.cache.get(fullPath);
@@ -73,6 +93,7 @@ export class QlooClient {
       return { body: cached.body, provenance };
     }
 
+    // 1. Live API Call via Qloo Gateway
     if (activeKey && activeKey.length > 8) {
       try {
         const res = await fetch(`${this.baseUrl}${fullPath}`, {
@@ -83,6 +104,7 @@ export class QlooClient {
           },
           signal: AbortSignal.timeout(8000),
         });
+
         if (res.ok) {
           const body = await res.json();
           this.stats.liveCalls += 1;
@@ -101,26 +123,76 @@ export class QlooClient {
           this.recordProvenance(provenance);
           return { body, provenance };
         }
-      } catch (_err) {
-        // Fall through to deterministic graph response if network/key is unreachable
+
+        if (res.status === 401 || res.status === 403) {
+          throw new QlooAuthError(
+            `Qloo API key authentication failed (${res.status} Unauthorized).`,
+            "Please check that your Qloo API key is valid on hackathon.api.qloo.com or run 'qloo setup --qloo'."
+          );
+        }
+
+        if (res.status === 429) {
+          throw new Error('Qloo API rate limit exceeded. Please throttle requests.');
+        }
+
+        throw new Error(`Qloo API HTTP error ${res.status}: ${res.statusText}`);
+      } catch (err) {
+        if (err instanceof QlooAuthError) throw err;
+        // If live API is unreachable or returned network error, only allow verified preset benchmarks
+        if (!this.isPresetBenchmarkQuery(params)) {
+          throw err;
+        }
       }
     }
 
-    const body = this.synthesizeValidatedResponse(path, params);
-    const latencyMs = Math.max(1, Date.now() - startedAt);
-    const provenance = {
-      method: 'GET',
-      path: fullPath,
-      endpoint: path,
-      filterType: params['filter.type'] || null,
-      validated: true,
-      rejectedParams: 0,
-      mode: activeKey ? 'verified-fallback' : 'deterministic-graph',
-      latencyMs,
-    };
-    this.cache.set(fullPath, { body, mode: provenance.mode });
-    this.recordProvenance(provenance);
-    return { body, provenance };
+    // 2. Verified Offline Benchmark Mode
+    // Check if this matches one of the 3 verified benchmark dossiers
+    if (this.isPresetBenchmarkQuery(params)) {
+      this.stats.fixtureCalls += 1;
+      const body = getBenchmarkFixture(path, params);
+      const latencyMs = Math.max(1, Date.now() - startedAt);
+      const provenance = {
+        method: 'GET',
+        path: fullPath,
+        endpoint: path,
+        filterType: params['filter.type'] || null,
+        validated: true,
+        rejectedParams: 0,
+        mode: 'benchmark-fixture',
+        latencyMs,
+      };
+      this.cache.set(fullPath, { body, mode: 'benchmark-fixture' });
+      this.recordProvenance(provenance);
+      return { body, provenance };
+    }
+
+    // 3. Custom Query without an API Key -> Fail Closed with standard QLOO_AUTH
+    throw new QlooAuthError(
+      'Custom live queries require a valid Qloo API key.',
+      "Provide your key via the 'X-Qloo-Api-Key' header, set QLOO_API_KEY in your environment, or configure @qloo/qloo-harness with 'qloo setup --qloo'."
+    );
+  }
+
+  isPresetBenchmarkQuery(params = {}) {
+    const text = (
+      String(params.query || '') +
+      ' ' +
+      String(params['a.signal.interests.entities'] || '') +
+      ' ' +
+      String(params['b.signal.interests.entities'] || '') +
+      ' ' +
+      String(params['signal.interests.entities'] || '')
+    ).toLowerCase();
+
+    return (
+      text.includes('standard') ||
+      text.includes('highline') ||
+      text.includes('high-line') ||
+      text.includes('a24') ||
+      text.includes('liquid') ||
+      text.includes('death') ||
+      text.trim().length === 0
+    );
   }
 
   recordProvenance(entry) {
@@ -130,117 +202,13 @@ export class QlooClient {
     }
   }
 
-  synthesizeValidatedResponse(path, params) {
-    if (path === '/search') {
-      const q = String(params.query || 'Entity').trim();
-      const slug = q.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const type = params.types || 'urn:entity:brand';
-      return {
-        results: [
-          {
-            entity_id: `urn:entity:${slug}`,
-            name: q,
-            types: [type],
-            popularity: 0.76,
-            properties: {
-              short_description: `Verified Qloo cultural entity (${type.replace('urn:entity:', '')})`,
-            },
-          },
-        ],
-      };
-    }
-
-    if (path === '/v2/analysis/compare') {
-      return {
-        results: {
-          tags: [
-            {
-              tag_id: 'urn:tag:culture:independent_craft',
-              name: 'Independent Craft & Subcultural Authenticity',
-              query: { score: 0.94, a_score: 0.95, b_score: 0.14 },
-            },
-            {
-              tag_id: 'urn:tag:culture:analog_experience',
-              name: 'Analog & Intimate Community Spaces',
-              query: { score: 0.91, a_score: 0.92, b_score: 0.18 },
-            },
-          ],
-        },
-      };
-    }
-
-    if (path === '/v2/trending') {
-      return {
-        results: {
-          series: [
-            { date: '2026-05-01', popularity_percentile: 0.61 },
-            { date: '2026-06-01', popularity_percentile: 0.65 },
-            { date: '2026-07-01', popularity_percentile: 0.70 },
-            { date: '2026-08-01', popularity_percentile: 0.74 },
-            { date: '2026-09-01', popularity_percentile: 0.78 },
-            { date: '2026-10-01', popularity_percentile: 0.82 },
-          ],
-        },
-      };
-    }
-
-    if (path === '/v2/insights') {
-      const type = params['filter.type'];
-      if (type === 'urn:demographics') {
-        return {
-          results: {
-            demographics: [
-              {
-                age: {
-                  '24_and_younger': 0.39,
-                  '25_to_29': 0.42,
-                  '30_to_34': 0.16,
-                  '35_to_54': -0.29,
-                  '55_and_older': -0.47,
-                },
-                gender: { female: 0.11, male: -0.11 },
-              },
-            ],
-          },
-        };
-      }
-      if (type === 'urn:heatmap') {
-        return {
-          results: {
-            heatmap: [
-              { location: params['filter.location.query'] || 'Austin', affinity: 0.95, affinity_rank: 0.96 },
-            ],
-          },
-        };
-      }
-      return {
-        results: {
-          entities: [
-            {
-              entity_id: `urn:entity:verified:${type}`,
-              name: `Qloo High-Affinity Pick (${type})`,
-              popularity: Number(params['filter.popularity.max'] || 0.72),
-              query: {
-                affinity: 0.94,
-                explainability: {
-                  [String(params['signal.interests.entities'] || 'seed')]: 0.61,
-                },
-              },
-            },
-          ],
-        },
-      };
-    }
-
-    return { results: [] };
-  }
-
   getSummary() {
     return {
       totalRequests: this.stats.totalRequests,
       validRequests: this.stats.validRequests,
       rejectedRequests: this.stats.rejectedRequests,
       liveCalls: this.stats.liveCalls,
+      fixtureCalls: this.stats.fixtureCalls,
       cachedCalls: this.stats.cachedCalls,
       endpointsTouched: Array.from(this.stats.endpointsTouched),
       filterTypesTouched: Array.from(this.stats.filterTypesTouched),

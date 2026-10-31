@@ -1,0 +1,11 @@
+{
+  "signals": [
+    "urn:entity:place:the-standard-high-line"
+  ],
+  "options": [
+    "urn:entity:artist:david-guetta",
+    "urn:entity:artist:floating-points",
+    "urn:entity:artist:peggy-gou"
+  ],
+  "option_type": "urn:entity:music:artist"
+}

@@ -1,0 +1,7 @@
+{
+  "signals": [
+    "urn:entity:place:the-standard-high-line"
+  ],
+  "target_type": "urn:entity:music:artist",
+  "limit": 5
+}

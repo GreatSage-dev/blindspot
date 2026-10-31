@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateQlooRequest } from '../src/qloo/validator.js';
-import { QlooClient } from '../src/qloo/client.js';
+import { QlooClient, QlooAuthError } from '../src/qloo/client.js';
 import {
   runBlindspotAudit,
   testAdversarialCliche,
@@ -57,17 +57,34 @@ test('runBlindspotAudit diagnoses all 5 domains, fixes walkout risks, and record
   assert.match(audit.actionKit.crowdRulebookPrompt, /CROWD RULEBOOK/i);
 });
 
-test('runBlindspotAudit supports custom entity and city inputs', async () => {
+test('runBlindspotAudit strictly enforces Zero-Mock Mandate and refuses unauthenticated custom queries', async () => {
   const client = new QlooClient({ apiKey: '' });
-  const audit = await runBlindspotAudit(client, {
-    customQuery: 'Aesop Skincare',
-    customCity: 'Portland',
-  });
 
-  assert.equal(audit.label, 'Aesop Skincare');
-  assert.equal(audit.city, 'Portland');
-  assert.equal(audit.verificationSummary.afterPassedCount, 5);
-  assert.equal(audit.verificationSummary.rejectedQlooParams, 0);
+  // 1. Unauthenticated custom query must fail closed with QLOO_AUTH
+  await assert.rejects(
+    async () => {
+      await runBlindspotAudit(client, {
+        customQuery: 'Unknown Independent Pop-Up Brand',
+        customCity: 'Seattle',
+      });
+    },
+    (err) => {
+      assert.equal(err.code, 'QLOO_AUTH');
+      assert.equal(err.layer, 'qloo');
+      assert.equal(err.retryable, false);
+      return true;
+    }
+  );
+
+  // 2. Querying a known benchmark preset by name resolves to verified benchmark data
+  const presetAudit = await runBlindspotAudit(client, {
+    customQuery: 'The Standard, High Line',
+    customCity: 'New York',
+  });
+  assert.equal(presetAudit.caseId, 'standard-highline');
+  assert.equal(presetAudit.label, 'The Standard, High Line');
+  assert.equal(presetAudit.verificationSummary.afterPassedCount, 5);
+  assert.equal(presetAudit.verificationSummary.rejectedQlooParams, 0);
 });
 
 test('Adversarial Cliché Gate blocks 99% popularity mismatches with Qloo proof', () => {
@@ -113,6 +130,17 @@ test('HTTP Server serves /api/health, /api/presets, /api/audit, /api/adversarial
     const auditBody = await auditRes.json();
     assert.equal(auditBody.ok, true);
     assert.equal(auditBody.audit.verificationSummary.afterPassedCount, 5);
+
+    // Verify unauthenticated custom audit returns 401 QLOO_AUTH
+    const unauthRes = await fetch(`${base}/api/audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customQuery: 'Unknown Brand X' }),
+    });
+    assert.equal(unauthRes.status, 401);
+    const unauthBody = await unauthRes.json();
+    assert.equal(unauthBody.ok, false);
+    assert.equal(unauthBody.error.code, 'QLOO_AUTH');
 
     const advRes = await fetch(`${base}/api/adversarial`, {
       method: 'POST',

@@ -7,7 +7,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test test/blindspot.test.js"
+    "test": "node --test test/blindspot.test.js",
+    "qloo:status": "npx @qloo/qloo-harness setup --status --json",
+    "qloo:doctor": "npx @qloo/qloo-harness doctor",
+    "qloo:mcp": "npx @qloo/qloo-harness mcp",
+    "qloo:exec:tags": "npx @qloo/qloo-harness exec find_tags --input-file workflows/find_tags.json",
+    "qloo:exec:compare": "npx @qloo/qloo-harness exec compare_audiences --input-file workflows/compare_audiences.json",
+    "qloo:exec:rank": "npx @qloo/qloo-harness exec rank --input-file workflows/rank_shortlist.json"
   },
   "keywords": [
     "qloo",
