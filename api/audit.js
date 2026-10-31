@@ -27,9 +27,10 @@ export default async function handler(req, res) {
       body = Object.fromEntries(parsedUrl.searchParams.entries());
     }
 
+    const headers = req.headers || {};
     const apiKeyOverride =
-      req.headers['x-qloo-api-key'] ||
-      req.headers['x-api-key'] ||
+      headers['x-qloo-api-key'] ||
+      headers['x-api-key'] ||
       body.apiKey ||
       undefined;
 

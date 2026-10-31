@@ -1,6 +1,12 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/app", "destination": "/app.html" }
-  ]
+    { "source": "/app", "destination": "/app.html" },
+    { "source": "/api", "destination": "/api/health" }
+  ],
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "src/**"
+    }
+  }
 }
