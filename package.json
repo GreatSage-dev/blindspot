@@ -4,8 +4,8 @@
   "description": "BLINDSPOT: Catch the quiet taste clashes driving your crowd away—and fix your launch plan with Qloo's Taste AI.",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "node local-server.js",
+    "dev": "node local-server.js",
     "test": "node --test test/blindspot.test.js",
     "qloo:status": "npx @qloo/qloo-harness setup --status --json",
     "qloo:doctor": "npx @qloo/qloo-harness doctor",
