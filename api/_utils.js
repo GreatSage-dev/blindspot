@@ -1,14 +1,27 @@
 // Shared utility for Vercel Serverless Functions and Local API Router
 
 export function sendJson(res, status, payload) {
-  const body = JSON.stringify(payload);
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Qloo-Api-Key, X-Api-Key');
-  res.end(body);
+  try {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Qloo-Api-Key, X-Api-Key');
+    res.setHeader('Cache-Control', 'no-store');
+
+    if (typeof res.status === 'function' && typeof res.json === 'function') {
+      return res.status(status).json(payload);
+    }
+
+    const body = JSON.stringify(payload);
+    res.statusCode = status;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(body);
+  } catch (err) {
+    console.error('sendJson error:', err);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ ok: false, error: 'Internal Server Error' }));
+    }
+  }
 }
 
 export async function parseJsonBody(req) {

@@ -208,3 +208,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
     console.log(`BLINDSPOT Qloo Taste Engine listening on http://localhost:${port}`);
   });
 }
+
+export default handleRequest;

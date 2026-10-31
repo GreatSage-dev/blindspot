@@ -2,7 +2,12 @@ import { sendJson, parseJsonBody } from './_utils.js';
 import { QlooClient, QlooAuthError } from '../src/qloo/client.js';
 import { runBlindspotAudit } from '../src/engine/blindspot.js';
 
-const qloo = new QlooClient();
+let qloo;
+try {
+  qloo = new QlooClient();
+} catch (_e) {
+  qloo = null;
+}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -27,6 +32,8 @@ export default async function handler(req, res) {
       req.headers['x-api-key'] ||
       body.apiKey ||
       undefined;
+
+    if (!qloo) qloo = new QlooClient();
 
     const audit = await runBlindspotAudit(qloo, {
       caseId: body.caseId,

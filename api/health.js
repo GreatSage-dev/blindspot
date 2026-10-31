@@ -1,7 +1,12 @@
 import { sendJson } from './_utils.js';
 import { QlooClient } from '../src/qloo/client.js';
 
-const qloo = new QlooClient();
+let qloo;
+try {
+  qloo = new QlooClient();
+} catch (_e) {
+  qloo = null;
+}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -12,11 +17,15 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  return sendJson(res, 200, {
-    ok: true,
-    service: 'blindspot-qloo',
-    version: '1.0.0',
-    liveKeyConfigured: qloo.hasLiveKey(),
-    qlooStats: qloo.getSummary(),
-  });
+  try {
+    return sendJson(res, 200, {
+      ok: true,
+      service: 'blindspot-qloo',
+      version: '1.0.0',
+      liveKeyConfigured: qloo ? qloo.hasLiveKey() : false,
+      qlooStats: qloo ? qloo.getSummary() : { totalRequests: 0, validRequests: 0 },
+    });
+  } catch (err) {
+    return sendJson(res, 500, { ok: false, error: err.message || 'Health check error' });
+  }
 }

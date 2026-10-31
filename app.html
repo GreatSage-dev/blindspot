@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blindspot Dashboard: Qloo Taste Turnaround Workbench</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" /> <!-- taste-skill-ignore -->
+  <link rel="stylesheet" href="/dashboard.css" />
+</head>
+<body>
+  <div class="app-frame">
+    <!-- Left Sidebar (228px on Tinted Stone Ground) -->
+    <aside id="appSidebar" class="app-sidebar" aria-label="Workspace navigation">
+      <div>
+        <a href="/" class="brand-row">
+          <span class="brand-mark">B</span>
+          <span class="brand-name">Blindspot</span>
+        </a>
+
+        <div class="scope-switcher">
+          <label for="caseSelect" class="scope-label">Active scenario</label>
+          <select id="caseSelect" class="scope-select">
+            <option value="standard-highline">The Standard, High Line</option>
+            <option value="a24-indie-launch">A24 Film Launch</option>
+            <option value="liquid-death-cult">Liquid Death Beverage</option>
+          </select>
+        </div>
+
+        <p class="nav-group-label">Audit workbench</p>
+        <ul class="nav-list">
+          <li>
+            <button type="button" class="nav-btn is-active" data-view="all">
+              <span class="nav-label">Taste audit</span>
+              <span id="navRiskCount" class="nav-count nav-count-risk" title="Walkout risks found">5</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-btn" data-view="markets">
+              <span class="nav-label">Cities &amp; age</span>
+              <span class="nav-count" title="Hidden taste cities">4</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-btn" data-view="kit">
+              <span class="nav-label">Outreach kit</span>
+              <span class="nav-count" title="Ready-to-send emails">3</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-btn" data-view="logs">
+              <span class="nav-label">Request log</span>
+              <span id="navCallsCount" class="nav-count" title="Validated Qloo requests">10</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-foot">
+        <a href="/" class="sidebar-foot-link">Editorial landing page</a>
+        <div>Qloo validator: 0 rejected params</div>
+      </div>
+    </aside>
+
+    <!-- Main Column: 48px Top Bar + Inset White Sheet -->
+    <div class="app-main-col">
+      <header class="app-topbar">
+        <button id="mobileMenuBtn" type="button" class="mobile-menu-btn" aria-label="Toggle navigation">Menu</button>
+
+        <form id="customAuditForm" class="topbar-search-form">
+          <input
+            id="customQueryInput"
+            type="text"
+            class="search-input"
+            placeholder="Check any brand, artist, film, or venue on Qloo..."
+            aria-label="Entity name"
+          />
+          <input
+            id="customCityInput"
+            type="text"
+            class="city-input"
+            placeholder="City (Austin)"
+            aria-label="Target city"
+          />
+          <button id="runAuditBtn" type="submit" class="btn-primary-action">Check with Qloo</button>
+        </form>
+
+        <div class="topbar-right">
+          <button id="openKeyModalBtn" type="button" class="btn-outline">Qloo API key</button>
+          <a href="/" class="btn-outline">Overview site</a>
+        </div>
+      </header>
+
+      <!-- White Inset Sheet -->
+      <main class="app-sheet">
+        <!-- Title Row & One Finding -->
+        <div class="sheet-title-row">
+          <div>
+            <h1 id="pageTitle" class="page-h1">The Standard, High Line: Qloo taste turnaround</h1>
+            <p id="findingSubline" class="finding-subline">
+              <span class="finding-strong">0 of 5 normal AI picks fit this crowd</span> (97% avg fame vs. 17% crowd fit); Qloo replaced all 5 and verified <span class="finding-strong">94% crowd affinity</span> across 10 validated API calls.
+            </p>
+          </div>
+          <div class="title-actions">
+            <button id="copyRulebookTopBtn" type="button" class="btn-outline">Copy crowd rulebook</button>
+            <button id="refreshAuditBtn" type="button" class="btn-primary-action">Re-verify on Qloo</button>
+          </div>
+        </div>
+
+        <!-- Usage & KPI Tray (#fafafa tray, 5 equal cells + 2/3 SVG Chart & 1/3 Cause Diagnosis) -->
+        <section id="section-overview" class="usage-tray" aria-labelledby="chartHeading">
+          <div class="kpi-strip" role="tablist" aria-label="Select chart metric">
+            <button type="button" class="kpi-cell is-selected" data-metric="affinity" role="tab" aria-selected="true">
+              <span class="kpi-label">Qloo crowd affinity</span>
+              <div class="kpi-val-row">
+                <span id="kpiAffinityVal" class="kpi-value">94%</span>
+                <span id="kpiAffinityDelta" class="kpi-unit kpi-delta-pos">+77 pts vs normal AI (17%)</span>
+              </div>
+            </button>
+            <button type="button" class="kpi-cell" data-metric="fame" role="tab" aria-selected="false">
+              <span class="kpi-label">Fame saturation</span>
+              <div class="kpi-val-row">
+                <span id="kpiFameVal" class="kpi-value">68%</span>
+                <span id="kpiFameDelta" class="kpi-unit kpi-delta-pos">−29 pts vs cliché AI (97%)</span>
+              </div>
+            </button>
+            <button type="button" class="kpi-cell" data-metric="tags" role="tab" aria-selected="false">
+              <span class="kpi-label">Shared taste tags</span>
+              <div class="kpi-val-row">
+                <span id="kpiTagsVal" class="kpi-value">23</span>
+                <span id="kpiTagsDelta" class="kpi-unit kpi-delta-pos">+22 vs normal AI (1 tag)</span>
+              </div>
+            </button>
+            <button type="button" class="kpi-cell" data-metric="pass" role="tab" aria-selected="false">
+              <span class="kpi-label">Verified domain slots</span>
+              <div class="kpi-val-row">
+                <span id="kpiPassVal" class="kpi-value">5 / 5</span>
+                <span id="kpiPassDelta" class="kpi-unit kpi-delta-pos">+5 vs normal AI (0 / 5)</span>
+              </div>
+            </button>
+            <button type="button" class="kpi-cell" data-metric="calls" role="tab" aria-selected="false">
+              <span class="kpi-label">Validated Qloo requests</span>
+              <div class="kpi-val-row">
+                <span id="kpiCallsVal" class="kpi-value">10</span>
+                <span id="kpiCallsDelta" class="kpi-unit">0 rejected parameters</span>
+              </div>
+            </button>
+          </div>
+
+          <div class="tray-lower-grid">
+            <div>
+              <div class="chart-panel-head">
+                <h2 id="chartHeading" class="panel-h2">Qloo crowd affinity vs. normal AI baseline across 5 cultural slots</h2>
+                <div class="chart-legend">
+                  <span class="legend-item"><span class="swatch-qloo"></span> Blindspot + Qloo pick</span>
+                  <span class="legend-item"><span class="swatch-naive"></span> Normal AI famous pick</span>
+                </div>
+              </div>
+              <div id="svgChartContainer" aria-label="Comparison chart">
+                <svg viewBox="0 0 640 210" width="100%" height="210" role="img" aria-label="Crowd affinity comparison across 5 slots">
+                  <line x1="150" y1="20" x2="620" y2="20" stroke="#f0f1f2" stroke-width="1" />
+                  <line x1="150" y1="185" x2="620" y2="185" stroke="#e8eaec" stroke-width="1" />
+                  <g transform="translate(0, 24)">
+                    <text x="0" y="14" font-size="12" fill="#131416">Music / Resident Act</text>
+                    <rect x="150" y="2" width="437" height="10" fill="#1b6c80" rx="2" />
+                    <rect x="150" y="14" width="87" height="8" fill="#cdced1" rx="2" />
+                    <text x="595" y="12" font-size="12" font-family="IBM Plex Mono, monospace" fill="#131416">95%</text>
+                  </g>
+                  <g transform="translate(0, 56)">
+                    <text x="0" y="14" font-size="12" fill="#131416">Beverage Partner</text>
+                    <rect x="150" y="2" width="428" height="10" fill="#1b6c80" rx="2" />
+                    <rect x="150" y="14" width="64" height="8" fill="#cdced1" rx="2" />
+                    <text x="595" y="12" font-size="12" font-family="IBM Plex Mono, monospace" fill="#131416">93%</text>
+                  </g>
+                  <g transform="translate(0, 88)">
+                    <text x="0" y="14" font-size="12" fill="#131416">Cultural Host</text>
+                    <rect x="150" y="2" width="432" height="10" fill="#1b6c80" rx="2" />
+                    <rect x="150" y="14" width="51" height="8" fill="#cdced1" rx="2" />
+                    <text x="595" y="12" font-size="12" font-family="IBM Plex Mono, monospace" fill="#131416">94%</text>
+                  </g>
+                  <g transform="translate(0, 120)">
+                    <text x="0" y="14" font-size="12" fill="#131416">Podcast Tie-In</text>
+                    <rect x="150" y="2" width="423" height="10" fill="#1b6c80" rx="2" />
+                    <rect x="150" y="14" width="110" height="8" fill="#cdced1" rx="2" />
+                    <text x="595" y="12" font-size="12" font-family="IBM Plex Mono, monospace" fill="#131416">92%</text>
+                  </g>
+                  <g transform="translate(0, 152)">
+                    <text x="0" y="14" font-size="12" fill="#131416">Film Night</text>
+                    <rect x="150" y="2" width="442" height="10" fill="#1b6c80" rx="2" />
+                    <rect x="150" y="14" width="83" height="8" fill="#cdced1" rx="2" />
+                    <text x="595" y="12" font-size="12" font-family="IBM Plex Mono, monospace" fill="#131416">96%</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <div class="cause-summary-stack">
+              <div class="cause-block">
+                <p class="cause-block-title">Loud effect (visible symptom)</p>
+                <p id="loudEffectText" class="cause-block-copy">
+                  Under-30 weekend lounge &amp; rooftop traffic dropped 31% over two quarters, even after management cut cocktail prices by 20%.
+                </p>
+              </div>
+              <div class="cause-block">
+                <p class="cause-block-title">What management blamed</p>
+                <p id="symptomBlamedText" class="cause-block-copy">
+                  Management blamed "Gen-Z drinking less and high drink prices" and hired a generic agency AI to book louder commercial club nights.
+                </p>
+              </div>
+              <div class="cause-block">
+                <p class="cause-block-title">Quiet cause proven by Qloo</p>
+                <p id="quietCauseText" class="cause-block-copy">
+                  Price was never the problem. Qloo shows your core downtown crowd shifted away from bottle-service nightlife toward vinyl listening bars, A24 cinema, and botanical aperitivo culture.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 15-Second Split-Screen Comparison Table -->
+        <section id="section-split" class="table-card" aria-labelledby="splitTableHeading">
+          <div class="section-head-row">
+            <h2 id="splitTableHeading" class="panel-h2">Normal AI vs. Blindspot, slot by slot</h2>
+            <span id="dnaTagsStrip" class="head-note">Top crowd tags: Indie Electronic (94%) · Vinyl Bars (91%) · A24 Cinema (89%)</span>
+          </div>
+
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Cultural domain</th>
+                <th>Normal AI pick (chases fame)</th>
+                <th class="num-col">Fame</th>
+                <th class="num-col">Fit</th>
+                <th>Blindspot + Qloo replacement</th>
+                <th class="num-col">Fame</th>
+                <th class="num-col">Qloo fit</th>
+                <th class="num-col">Shared tags</th>
+                <th>Qloo receipt</th>
+              </tr>
+            </thead>
+            <tbody id="splitComparisonBody">
+              <tr>
+                <td>
+                  <div class="entity-title">Music / Resident Act</div>
+                  <div class="mono-id">urn:entity:artist</div>
+                </td>
+                <td>
+                  <div class="entity-title">David Guetta (Big-Room EDM Tribute)</div>
+                  <div class="entity-sub"><span class="status-pill pill-risk">Walkout risk</span> Clash: Mainstream Vegas EDM</div>
+                </td>
+                <td class="num-col">98%</td>
+                <td class="num-col kpi-delta-neg">19%</td>
+                <td>
+                  <div class="entity-title">KAYTRANADA / Men I Trust (Late-Night Vinyl Set)</div>
+                  <div class="entity-sub"><span class="status-pill pill-ok">Verified fit</span> Indie Electronic &amp; Downtempo</div>
+                </td>
+                <td class="num-col">74%</td>
+                <td class="num-col kpi-delta-pos">95%</td>
+                <td class="num-col">5</td>
+                <td><button type="button" class="btn-outline proof-btn" data-slot-index="0">Receipt</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Drey's Adversarial Cliché Blocker -->
+        <section class="gate-strip" aria-labelledby="gateHeading">
+          <div class="gate-row">
+            <div>
+              <h2 id="gateHeading" class="panel-h2">Try to break the Qloo gate</h2>
+              <p class="finding-subline">Force a 96%+ famous cliché into this plan. Blindspot runs a live <code class="inline-code">/v2/analysis/compare</code> check and blocks it with a receipt.</p>
+            </div>
+            <div id="advButtonsRow" class="gate-actions">
+              <button type="button" class="btn-outline btn-cliche" data-cliche-id="cliche-drake-stadium">Force Drake (99% fame)</button>
+              <button type="button" class="btn-outline btn-cliche" data-cliche-id="cliche-mrbeast-promo">Force MrBeast Stunt (99% fame)</button>
+              <button type="button" class="btn-outline btn-cliche" data-cliche-id="cliche-times-square-chain">Force Times Square Chain (96% fame)</button>
+            </div>
+          </div>
+          <div id="advReceiptBox" class="gate-receipt" hidden></div>
+        </section>
+
+        <!-- Hidden Taste Cities & Crowd Age Skew (2 Equal Columns) -->
+        <section id="section-markets" class="two-col-grid" aria-label="Geographic and demographic grounding">
+          <div class="panel-card">
+            <div class="section-head-row">
+              <h2 class="panel-h2">Hidden taste cities <code class="inline-code">urn:heatmap</code></h2>
+              <span class="head-note">Taste rank vs. population rank</span>
+            </div>
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th class="num-col">Taste rank</th>
+                  <th class="num-col">Census rank</th>
+                  <th class="num-col">Qloo affinity</th>
+                  <th>Grounding note</th>
+                </tr>
+              </thead>
+              <tbody id="marketsTableBody">
+                <tr>
+                  <td><strong>Brooklyn / NYC</strong></td>
+                  <td class="num-col">#1</td>
+                  <td class="num-col">#1</td>
+                  <td class="num-col">96%</td>
+                  <td>Core hi-fi &amp; indie cinema cluster</td>
+                </tr>
+                <tr>
+                  <td><strong>Austin</strong></td>
+                  <td class="num-col">#2</td>
+                  <td class="num-col">#10</td>
+                  <td class="num-col">93%</td>
+                  <td>+8 rank jump over population</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel-card">
+            <div class="section-head-row">
+              <h2 class="panel-h2">Crowd age skew <code class="inline-code">urn:demographics</code></h2>
+              <span id="momentumText" class="head-note">6-mo velocity: +18%</span>
+            </div>
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Age bracket</th>
+                  <th class="num-col">Qloo index skew</th>
+                  <th>Audience alignment</th>
+                </tr>
+              </thead>
+              <tbody id="demographicsTableBody">
+                <tr>
+                  <td class="mono-id">24_and_younger</td>
+                  <td class="num-col kpi-delta-pos">+34%</td>
+                  <td><span class="status-pill pill-ok">Target crowd</span></td>
+                </tr>
+                <tr>
+                  <td class="mono-id">25_to_29</td>
+                  <td class="num-col kpi-delta-pos">+42%</td>
+                  <td><span class="status-pill pill-ok">Target crowd</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Tim's 10x Accelerator: Partner Outreach Emails & Copy-Paste Crowd Rulebook -->
+        <section id="section-kit" class="panel-card" style="margin-bottom: var(--gap);" aria-labelledby="kitHeading">
+          <div class="section-head-row">
+            <div>
+              <h2 id="kitHeading" class="panel-h2">Outreach emails &amp; crowd rulebook</h2>
+              <p class="finding-subline">Written from the verified Qloo matches and shared taste tags above. Ready to send.</p>
+            </div>
+            <div class="title-actions">
+              <button id="copyRulebookBtn" type="button" class="btn-primary-action">Copy crowd rulebook</button>
+              <button id="downloadRulebookBtn" type="button" class="btn-outline">Download CROWD-RULEBOOK.md</button>
+            </div>
+          </div>
+
+          <div id="emailsContainer" class="emails-grid" style="margin-top:16px;"></div>
+
+          <h3 class="panel-h2" style="margin-top:16px;">Copy-paste crowd rulebook for any AI agent</h3>
+          <pre id="rulebookPre" class="rulebook-pre"></pre>
+        </section>
+
+        <!-- Validated Qloo API Request Log -->
+        <section id="section-logs" class="table-card" style="margin-bottom:0;" aria-labelledby="logsHeading">
+          <div class="section-head-row">
+            <h2 id="logsHeading" class="panel-h2">Qloo request log</h2>
+            <span id="validatorPill" class="status-pill pill-ok">10 / 10 valid requests · 0 rejected params</span>
+          </div>
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Filter type</th>
+                <th>Validated query path</th>
+                <th class="num-col">Rejected params</th>
+                <th class="num-col">Latency</th>
+              </tr>
+            </thead>
+            <tbody id="qlooLogsTableBody"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Qloo Proof Receipt Modal -->
+  <div id="proofModal" class="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="proofModalTitle">
+      <div class="section-head-row">
+        <h3 id="proofModalTitle" class="panel-h2">Qloo deterministic proof receipt</h3>
+        <button id="closeProofModalBtn" type="button" class="btn-outline">Close</button>
+      </div>
+      <div id="proofModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Qloo API Key Modal -->
+  <div id="keyModal" class="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="keyModalTitle">
+      <div class="section-head-row">
+        <h3 id="keyModalTitle" class="panel-h2">Connect live Qloo Hackathon API key</h3>
+        <button id="closeKeyModalBtn" type="button" class="btn-outline">Close</button>
+      </div>
+      <p class="finding-subline" style="margin-bottom:12px;">
+        Paste your <code class="inline-code">hackathon.api.qloo.com</code> key to run live requests through the parameter guard. It stays in this browser.
+      </p>
+      <div style="display:flex; gap:8px;">
+        <input id="apiKeyInput" type="password" class="search-input" placeholder="Paste X-Api-Key..." />
+        <button id="saveKeyBtn" type="button" class="btn-primary-action">Save &amp; re-run</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

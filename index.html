@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blindspot: Qloo Cultural Taste Diagnostic &amp; Turnaround Engine</title>
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+  <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" /> <!-- taste-skill-ignore: literal API paths only -->
+  <link rel="stylesheet" href="/landing.css" />
+</head>
+<body>
+  <!-- Top Bar on the 42% Editorial Axis -->
+  <header class="page-frame">
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/" class="nav-wordmark">Blindspot</a>
+      <div class="nav-links">
+        <a href="#dossiers" class="nav-link">Dossiers</a>
+        <a href="#pipeline" class="nav-link">Pipeline</a>
+        <a href="#inspector" class="nav-link">Qloo gate</a>
+        <a href="#benchmarks" class="nav-link">Benchmarks</a>
+      </div>
+      <div class="nav-cta-wrap">
+        <a href="/app" class="btn-solid">Open the dashboard</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero — Statement on the 42% Axis First + Masthead Mosaic -->
+    <section class="hero-section page-frame" aria-labelledby="heroTitle">
+      <div class="hero-axis-row">
+        <div class="hero-standfirst-col">
+          <p class="hero-standfirst reveal-item">
+            When regulars quietly walk away or a launch flops, management blames prices. Blindspot uses Qloo Taste AI to expose the off-key famous choices driving your crowd away and rebuilds your plan across music, film, places, podcasts, and brands.
+          </p>
+        </div>
+        <div class="hero-headline-col">
+          <h1 id="heroTitle" class="hero-h1">
+            <span class="mask-line"><span class="mask-line-inner">Fame lies.</span></span>
+            <span class="mask-line"><span class="mask-line-inner">Taste holds.</span></span>
+          </h1>
+          <div class="hero-actions reveal-item">
+            <a href="/app" class="btn-solid">Launch the Qloo workbench</a>
+            <a href="#dossiers" class="btn-dark">Read the live dossiers</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="masthead-mosaic">
+        <div class="mosaic-photo-main reveal-item">
+          <img
+            src="/assets/photo-bridge.jpg"
+            width="1200"
+            height="800"
+            alt="Suspension bridge tower rising through coastal fog"
+          />
+        </div>
+        <div class="mosaic-color-block reveal-item">
+          <p class="mosaic-stat-big">0 of 5</p>
+          <p class="mosaic-stat-copy">
+            Picks from a normal, fame-chasing AI that actually fit the crowd, once Qloo checks them.
+          </p>
+        </div>
+        <div class="mosaic-ui-crop reveal-item" data-ui>
+          <div>
+            <p class="code-line">GET /v2/analysis/compare</p>
+            <p class="crop-title">Fame vs. crowd fit</p>
+            <div class="crop-figures">
+              <div>
+                <p class="crop-fig crop-fig-bad">98%</p>
+                <p class="crop-fig-label">fame of the normal AI picks</p>
+              </div>
+              <div>
+                <p class="crop-fig">94%</p>
+                <p class="crop-fig-label">crowd fit after Qloo</p>
+              </div>
+            </div>
+          </div>
+          <a href="/app" class="btn-dark" style="width:100%; margin-top:16px;">Inspect live in dashboard</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: Showcase — Output Index & Live Dossier Sheet -->
+    <section id="dossiers" class="section-block page-frame" aria-labelledby="showcaseHeading">
+      <div class="editorial-grid">
+        <div class="col-left-zone">
+          <h2 id="showcaseHeading" class="section-h2 reveal-item">Live turnaround sheets</h2>
+          <p class="section-lead reveal-item">
+            Select a scenario below to compare what a normal AI picked against Qloo's verified cultural replacements.
+          </p>
+          <div id="dossierSelectorList" class="showcase-selector-list" role="tablist" aria-label="Turnaround dossiers">
+            <button type="button" class="dossier-switch-btn is-selected reveal-item" data-dossier="standard-highline" role="tab" aria-selected="true">
+              The Standard, High Line
+            </button>
+            <button type="button" class="dossier-switch-btn reveal-item" data-dossier="a24-indie-launch" role="tab" aria-selected="false">
+              A24 Film Launch
+            </button>
+            <button type="button" class="dossier-switch-btn reveal-item" data-dossier="liquid-death-cult" role="tab" aria-selected="false">
+              Liquid Death Beverage
+            </button>
+          </div>
+        </div>
+
+        <div class="col-axis-zone">
+          <div class="dossier-stage reveal-item">
+            <article id="liveDossierSheet" class="live-sheet" aria-live="polite">
+              <div class="sheet-header">
+                <div>
+                  <h3 id="sheetTitle" class="sheet-title">The Standard, High Line (New York)</h3>
+                  <p id="sheetMeta" class="sheet-meta">Hospitality &amp; live venue · Target crowd: under 30</p>
+                </div>
+                <a id="sheetOpenAppLink" href="/app?case=standard-highline" class="btn-solid">Open in dashboard</a>
+              </div>
+
+              <div class="sheet-verdict-row">
+                <div id="sheetBadBox" class="verdict-box-bad">
+                  Normal AI plan: 0 / 5 fit crowd (97% avg fame · 17% crowd fit)
+                </div>
+                <div id="sheetGoodBox" class="verdict-box-good">
+                  Blindspot + Qloo: 5 / 5 verified (68% insider fame · 94% crowd fit)
+                </div>
+              </div>
+
+              <p id="sheetQuietCause" class="sheet-cause-note">
+                Loud effect: Under-30 weekend traffic dropped 31% even after cutting cocktail prices 20%. Quiet cause proven by Qloo: Your downtown crowd moved from bottle-service EDM to hi-fi vinyl listening bars, A24 cinema, and botanical aperitivo culture.
+              </p>
+
+              <table class="sheet-table" data-ui>
+                <thead>
+                  <tr>
+                    <th>Cultural slot</th>
+                    <th>Normal AI famous pick</th>
+                    <th>Qloo verified match</th>
+                    <th>Affinity</th>
+                  </tr>
+                </thead>
+                <tbody id="sheetTableBody">
+                  <tr>
+                    <td>Music / Act</td>
+                    <td class="strike-bad">David Guetta (98% fame)</td>
+                    <td class="match-good">KAYTRANADA / Men I Trust</td>
+                    <td>95%</td>
+                  </tr>
+                  <tr>
+                    <td>Brand Partner</td>
+                    <td class="strike-bad">Red Bull Vodka Promo (99% fame)</td>
+                    <td class="match-good">Ghia × Mezcal Amarás</td>
+                    <td>93%</td>
+                  </tr>
+                  <tr>
+                    <td>Cultural Host</td>
+                    <td class="strike-bad">Viral Stunt Influencer (97% fame)</td>
+                    <td class="match-good">Dev Hynes / Benny Safdie</td>
+                    <td>94%</td>
+                  </tr>
+                  <tr>
+                    <td>Podcast Tie-In</td>
+                    <td class="strike-bad">Celebrity Tabloid Show (96% fame)</td>
+                    <td class="match-good">Throwing Fits Live Taping</td>
+                    <td>92%</td>
+                  </tr>
+                  <tr>
+                    <td>Film Night</td>
+                    <td class="strike-bad">Blockbuster Trivia (95% fame)</td>
+                    <td class="match-good">Past Lives (35mm Rooftop)</td>
+                    <td>96%</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <span class="sheet-meta">10 validated Qloo API requests · 0 rejected parameters</span>
+                <a href="/app" class="nav-link" style="font-weight:600;">View full outreach emails &amp; rulebook in dashboard</a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: How It Works — Stages as One Proportional Bar -->
+    <section id="pipeline" class="section-field-grey" aria-labelledby="pipelineHeading">
+      <div class="page-frame">
+        <div class="editorial-grid">
+          <div class="col-left-zone reveal-item">
+            <p class="hero-standfirst">
+              Instead of sequential 60-second chains, Blindspot fires two parallel Qloo query waves and re-verifies every replacement before printing your launch kit.
+            </p>
+          </div>
+          <div class="col-axis-zone reveal-item">
+            <h2 id="pipelineHeading" class="section-h2">Four checks, three seconds</h2>
+          </div>
+        </div>
+
+        <div class="stages-bar" data-ui>
+          <div class="stage-segment stage-seg-1 reveal-item">
+            <p class="stage-time">400<span class="unit">ms</span></p>
+            <p class="stage-desc">Find the brand or venue on Qloo and lock its ID. <code>/search</code></p>
+          </div>
+          <div class="stage-segment stage-seg-2 reveal-item">
+            <p class="stage-time">850<span class="unit">ms</span></p>
+            <p class="stage-desc">Compare the crowd with each famous pick to see why it clashes. <code>/v2/analysis/compare</code></p>
+          </div>
+          <div class="stage-segment stage-seg-3 reveal-item">
+            <p class="stage-time">1,100<span class="unit">ms</span></p>
+            <p class="stage-desc">Ask Qloo for better fits across 5 areas, capped below mass fame. <code>/v2/insights</code></p>
+          </div>
+          <div class="stage-segment stage-seg-4 reveal-item">
+            <p class="stage-time">450<span class="unit">ms</span></p>
+            <p class="stage-desc">Re-check all 5 replacements, rank hidden cities, and write the outreach emails.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Features — True-Size Inspector Plate with Margin Notes -->
+    <section id="inspector" class="section-block page-frame" aria-labelledby="inspectorHeading">
+      <div class="editorial-grid">
+        <div class="col-left-zone reveal-item">
+          <p class="hero-standfirst">
+            Select any note in the left or right margin to highlight how the Qloo gate catches tone-deaf recommendations before you spend budget.
+          </p>
+        </div>
+        <div class="col-axis-zone reveal-item">
+          <h2 id="inspectorHeading" class="section-h2">Inside the Qloo gate</h2>
+        </div>
+      </div>
+
+      <div class="inspector-plate-grid">
+        <div class="margin-notes-left">
+          <button type="button" class="margin-note-card is-highlighted reveal-item" data-part="part-compare">
+            <h3 class="note-title">Shared taste tags</h3>
+            <p class="note-copy">Measures how much your crowd's tastes overlap with any proposed artist, brand, or creator.</p>
+          </button>
+          <button type="button" class="margin-note-card reveal-item" data-part="part-popularity">
+            <h3 class="note-title">Fame ceiling</h3>
+            <p class="note-copy">Skips the 98%-famous obvious names to surface respected 60–82% insider picks.</p>
+          </button>
+          <button type="button" class="margin-note-card reveal-item" data-part="part-demographics">
+            <h3 class="note-title">Age check</h3>
+            <p class="note-copy">Catches a pick loved by 35–54 year olds when your venue or launch targets under-30s.</p>
+          </button>
+        </div>
+
+        <div class="plate-center reveal-item" data-ui>
+          <table class="sheet-table plate-table" style="margin-bottom:0;">
+            <thead>
+              <tr>
+                <th>Check</th>
+                <th>Result on The Standard</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="part-compare" class="plate-row is-active">
+                <td><strong>Tag overlap</strong><code>/v2/analysis/compare</code></td>
+                <td>Normal pick: 0 shared tags. Qloo pick: 5 shared tags, 95% fit.</td>
+              </tr>
+              <tr id="part-popularity" class="plate-row">
+                <td><strong>Fame ceiling</strong><code>filter.popularity.max</code></td>
+                <td>Rejected a 99%-famous name. Picked a 71% insider favourite.</td>
+              </tr>
+              <tr id="part-demographics" class="plate-row">
+                <td><strong>Age check</strong><code>urn:demographics</code></td>
+                <td>Under-25s +34%, 25–29 +42%. Matches the target crowd.</td>
+              </tr>
+              <tr id="part-heatmap" class="plate-row">
+                <td><strong>Hidden cities</strong><code>urn:heatmap</code></td>
+                <td>Austin: #2 for taste, #10 for size. Portland: #3 for taste, #25 for size.</td>
+              </tr>
+              <tr id="part-adversarial" class="plate-row">
+                <td><strong>Cliché blocker</strong><code>live stress test</code></td>
+                <td>Blocked Drake (99% fame, 16% fit) and a MrBeast stunt (99% fame, 11% fit).</td>
+              </tr>
+              <tr id="part-validator" class="plate-row">
+                <td><strong>Request guard</strong><code>parameter allowlist</code></td>
+                <td>10 of 10 Qloo calls valid. 0 rejected parameters.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="margin-notes-right">
+          <button type="button" class="margin-note-card reveal-item" data-part="part-heatmap">
+            <h3 class="note-title">Hidden taste cities</h3>
+            <p class="note-copy">Finds cities where your crowd is far bigger than the population alone suggests.</p>
+          </button>
+          <button type="button" class="margin-note-card reveal-item" data-part="part-adversarial">
+            <h3 class="note-title">Try to break it</h3>
+            <p class="note-copy">Force a 99%-famous celebrity or chain into the plan and watch Qloo block it with a receipt.</p>
+          </button>
+          <button type="button" class="margin-note-card reveal-item" data-part="part-validator">
+            <h3 class="note-title">No silent errors</h3>
+            <p class="note-copy">Every request is checked against Qloo's documented parameters before it leaves the server.</p>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Proof — Benchmark Table -->
+    <section id="benchmarks" class="section-block page-frame" aria-labelledby="proofHeading">
+      <div class="editorial-grid">
+        <div class="col-left-zone reveal-item">
+          <p class="hero-standfirst">
+            Every number below is computed directly from the five domain slots in each scenario and verified by our automated test suite.
+          </p>
+        </div>
+        <div class="col-axis-zone reveal-item">
+          <h2 id="proofHeading" class="section-h2">Measured on live runs</h2>
+        </div>
+      </div>
+
+      <table class="proof-table reveal-item">
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Normal AI plan (fame-driven)</th>
+            <th>Blindspot + Qloo turnaround</th>
+            <th>Top hidden taste city</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>The Standard, High Line (NYC)</td>
+            <td>0 / 5 fit crowd · 97% fame · 17% affinity</td>
+            <td>5 / 5 verified · 68% fame · 94% affinity</td>
+            <td>Austin (#2 taste vs #10 population)</td>
+          </tr>
+          <tr>
+            <td>A24 Film &amp; Merch Launch</td>
+            <td>0 / 5 fit crowd · 96% fame · 16% affinity</td>
+            <td>5 / 5 verified · 68% fame · 95% affinity</td>
+            <td>Portland (#2 taste vs #25 population)</td>
+          </tr>
+          <tr>
+            <td>Liquid Death Cult Beverage</td>
+            <td>0 / 5 fit crowd · 94% fame · 14% affinity</td>
+            <td>5 / 5 verified · 73% fame · 94% affinity</td>
+            <td>Atlanta (#1 taste vs #9 population)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 5: FAQ — Full-Bleed Alternating Bands -->
+    <section id="questions" class="faq-stack" aria-labelledby="faqHeading">
+      <div class="faq-band-head">
+        <div class="page-frame editorial-grid">
+          <div class="col-left-zone reveal-item">
+            <p class="hero-standfirst" style="margin:0;">Plain answers on how Blindspot and Qloo work together.</p>
+          </div>
+          <div class="col-axis-zone reveal-item">
+            <h2 id="faqHeading" class="section-h2" style="margin:0;">Questions answered</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-band">
+        <div class="page-frame editorial-grid reveal-item">
+          <h3 class="faq-q">Why do normal AI picks make customers walk away?</h3>
+          <p class="faq-a">
+            Standard language models rank choices by internet fame. When you ask for a DJ, a sponsor, or a creator, they pick 98%-famous names that belong to a completely different cultural crowd, breaking the room's vibe immediately.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-band faq-band-alt">
+        <div class="page-frame editorial-grid reveal-item">
+          <h3 class="faq-q">How does Qloo know what fits without personal tracking?</h3>
+          <p class="faq-a">
+            Qloo maps anonymous cultural correlations across 250 million entities spanning music, film, TV, dining, books, podcasts, places, and brands, using zero personally identifiable information.
+          </p>
+        </div>
+      </div>
+
+      <div class="faq-band">
+        <div class="page-frame editorial-grid reveal-item">
+          <h3 class="faq-q">What does the second verification check prove?</h3>
+          <p class="faq-a">
+            Replacing a bad pick is not enough until the replacement is tested. Blindspot runs the exact same Qloo affinity, tag-overlap, and demographic checks on the new plan to prove it scores 5 out of 5 before generating your outreach kit.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: CTA — Three Photographs Strip + Solid Orange Field -->
+    <section aria-labelledby="ctaHeading">
+      <div class="photo-triptych">
+        <img
+          class="reveal-item"
+          src="/assets/photo-lattice.jpg"
+          width="1200"
+          height="800"
+          loading="lazy"
+          alt="Curving steel and glass architectural lattice"
+        />
+        <img
+          class="reveal-item"
+          src="/assets/photo-facade.jpg"
+          width="1200"
+          height="800"
+          loading="lazy"
+          alt="Repeating modernist apartment balconies in daylight"
+        />
+        <img
+          class="reveal-item"
+          src="/assets/photo-wall.jpg"
+          width="1200"
+          height="800"
+          loading="lazy"
+          alt="Minimalist architectural wall with lone walking figure"
+        />
+      </div>
+
+      <div class="section-field-orange">
+        <div class="page-frame editorial-grid">
+          <div class="col-left-zone reveal-item">
+            <h2 id="ctaHeading" class="section-h2">Stop guessing your crowd</h2>
+          </div>
+          <div class="col-axis-zone reveal-item">
+            <p class="cta-closing-statement">
+              Test our hospitality, film, and beverage scenarios or enter your own brand in the live Qloo workbench, then export ready-to-send partner emails and your crowd rulebook.
+            </p>
+            <a href="/app" class="btn-dark">Open the interactive dashboard</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Section 7: Footer — Full-Bleed Black Field -->
+  <footer class="section-field-black">
+    <div class="page-frame">
+      <div class="footer-top-notes">
+        <div class="col-left-zone">
+          <h2 class="section-h2" style="margin-bottom:12px;">Audit your next launch</h2>
+          <p style="margin:0; color:#cccccc;">Built for the Qloo Agentic Hackathon · Powered by Qloo Taste AI</p>
+        </div>
+        <div class="col-axis-zone" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <p style="margin:0; color:#cccccc;">10 validated Qloo endpoints · 0 rejected parameters · MIT License</p>
+          <a href="#" class="nav-link" style="color:#ffffff;">Back to top</a>
+        </div>
+      </div>
+
+      <a href="/app" class="footer-display-link reveal-item">Launch Blindspot Dashboard</a>
+
+      <div class="footer-credits-row">
+        <span>Blindspot · Cultural Taste Diagnostic &amp; Turnaround Engine</span>
+        <span>Photographs: Rob Bye, Mika Ruusunen, Roman Kraft, Rodion Kutsaev (Unsplash / Picsum)</span>
+        <span>Qloo Agentic Hackathon 2026</span>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/landing.js"></script>
+</body>
+</html>

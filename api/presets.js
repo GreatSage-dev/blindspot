@@ -10,14 +10,18 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  return sendJson(res, 200, {
-    presets: PRESET_CASES.map((p) => ({
-      id: p.id,
-      label: p.label,
-      category: p.category,
-      city: p.city,
-      loudEffect: p.loudEffect,
-    })),
-    adversarialCliches: ADVERSARIAL_CLICHES,
-  });
+  try {
+    return sendJson(res, 200, {
+      presets: PRESET_CASES.map((p) => ({
+        id: p.id,
+        label: p.label,
+        category: p.category,
+        city: p.city,
+        loudEffect: p.loudEffect,
+      })),
+      adversarialCliches: ADVERSARIAL_CLICHES,
+    });
+  } catch (err) {
+    return sendJson(res, 500, { ok: false, error: err.message || 'Presets fetch failed' });
+  }
 }
